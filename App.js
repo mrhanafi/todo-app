@@ -26,9 +26,22 @@ const App = () => {
     return todoList.map((todo) => (
     <View>
 
-      <Card key={todo.id} todo={todo}/>
+      <Card key={todo.id} onPress={updateTodo} todo={todo}/>
     </View>
       ))
+  }
+
+  const updateTodo = (todo) => {
+    const updatedTodo = {
+      ...todo,
+      isCompleted: !todo.isCompleted
+    }
+    const updatedTodoList = [...todoList];
+    const indexToUpdate = updatedTodoList.findIndex(t => t.id === updatedTodo.id);
+
+    updatedTodoList[indexToUpdate] = updatedTodo;
+    setTodoList(updatedTodoList);
+    // console.log(updatedTodo)
   }
 
   return (
@@ -40,7 +53,6 @@ const App = () => {
         <View style={s.body}>
           <ScrollView>
           {renderTodoList()}
-
           </ScrollView>
         </View>
       </SafeAreaView>
