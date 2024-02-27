@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, SafeAreaView, ScrollView, Text, View } from 'react-native';
 import s from './gstyle';
 import Header from './components/Header';
@@ -7,8 +7,11 @@ import Tab from './components/Tab';
 import BtnAdd from './components/BtnAdd';
 import Dialog from "react-native-dialog";
 import uuid from "react-native-uuid";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // const TO_DO = ;
+let isFirstRender = true;
+let isLoadUpdate = false;
 
 const App = () => {
   const [todoList, setTodoList] = useState([
@@ -29,6 +32,7 @@ const App = () => {
   const [selectedTab, setSelectedTab] = useState('all');
   const [isAddDialogDisplayed, setIsAddDialogDisplayed] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const scrollviewRef = useRef();
 
   
 
@@ -43,6 +47,45 @@ const App = () => {
     updatedTodoList[indexToUpdate] = updatedTodo;
     setTodoList(updatedTodoList);
     // console.log(updatedTodo)
+  }
+
+  // -------------async storage----------------
+  useEffect(() => {
+    loadTodoList();
+  },[]);
+
+  useEffect(() => {
+    if(!isLoadUpdate){
+      if(!isFirstRender){
+        saveTodoList();
+  
+      }else{
+        isFirstRender = false;
+      }
+    }else{
+      isLoadUpdate = false
+    }
+  },[todoList]);
+
+  async function loadTodoList(){
+    console.log('Load')
+    try{
+      const todoListString = await AsyncStorage.getItem("@todoList");
+      const parseTodoList = JSON.parse(todoListString);
+      isLoadUpdate = true;
+      setTodoList(parseTodoList || []);
+    }catch(err){
+
+    }
+  }
+
+  async function saveTodoList(){
+    console.log('save')
+    try{
+      await AsyncStorage.setItem("@todoList",JSON.stringify(todoList))
+    }catch(err){
+      alert(err);
+    }
   }
 
   const getFilteredList = () => {
@@ -80,9 +123,13 @@ const App = () => {
       title: inputValue,
       isCompleted: false,
     }
-    setTodoList([newTodo,...todoList]);
+    // setTodoList([newTodo,...todoList]);
+    setTodoList([...todoList,newTodo]);
     setIsAddDialogDisplayed(false);
     setInputValue("");
+    setTimeout(() => {
+      scrollviewRef.current.scrollToEnd()
+    },300)
   }
 
   const renderAddDialog = () => {
@@ -107,7 +154,7 @@ const App = () => {
           <Header />
         </View>
         <View style={s.body}>
-          <ScrollView>
+          <ScrollView ref={scrollviewRef}> 
           {renderTodoList()}
           </ScrollView>
         </View>
